@@ -18,14 +18,15 @@ class SiteMonitor(threading.Thread):
         self.site_name = site_config.get("name")
         self.url = site_config.get("url")
         self.interval = site_config.get("interval", 60)
-        self.save_mode = site_config.get("save_mode", 0)
+        self.save_modes = site_config.get("save_mode", 0)
+        self.notify_modes = site_config.get("notify_modes", 0)
 
         self.last_hash = None
         self.last_saved_filepath = None
         self.daemon = True
         self.safe_site_name = re.sub(r'[\\/:*?"<>|]', '_', self.site_name)
 
-        self.capture_dir = os.path.join(os.getcwd(), 'capture')
+        self.capture_dir = os.path.join(os.getcwd(), 'captures')
         os.makedirs(self.capture_dir, exist_ok=True)
 
         # 使用 Session 保持长连接和 Cookie
@@ -34,7 +35,7 @@ class SiteMonitor(threading.Thread):
 
     def load_local_history(self):
         """
-        启动时读取 capture 文件夹中的历史记录。
+        启动时读取 captures 文件夹中的历史记录。
         设置为当前检测基准，并根据 save_mode 自动清理多余的旧文件。
         """
         if not os.path.exists(self.capture_dir):
@@ -67,7 +68,7 @@ class SiteMonitor(threading.Thread):
             return
 
         # 模式1，只保留一份。如果本地有多份历史文件，启动时自动清理旧文件
-        if self.save_mode == 1 and len(site_files) > 1:
+        if self.save_modes == 1 and len(site_files) > 1:
             for old_file in site_files[:-1]:
                 old_filepath = os.path.join(self.capture_dir, old_file)
                 try:
@@ -105,9 +106,9 @@ class SiteMonitor(threading.Thread):
 
     def save_html(self, raw_html):
         """
-        根据配置保存网页HTML到 capture 目录中
+        根据配置保存网页HTML到 captures 目录中
         """
-        if self.save_mode == 0:
+        if self.save_modes == 0:
             return
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -123,7 +124,7 @@ class SiteMonitor(threading.Thread):
             return
 
         # 模式1时，如果存在上一次保存的文件，删除它
-        if self.save_mode == 1 and self.last_saved_filepath and os.path.exists(self.last_saved_filepath):
+        if self.save_modes == 1 and self.last_saved_filepath and os.path.exists(self.last_saved_filepath):
             if self.last_saved_filepath != filepath:  # 防止同秒内重复调用删掉刚创建的文件
                 try:
                     os.remove(self.last_saved_filepath)
@@ -136,7 +137,8 @@ class SiteMonitor(threading.Thread):
         """
         线程主循环
         """
-        print(f"开始监听: {self.site_name} (URL: {self.url}, 间隔: {self.interval}秒, 保存模式: {self.save_mode})")
+        print(
+            f"开始监听: {self.site_name} (URL: {self.url}, 间隔: {self.interval}秒, 保存模式: {self.save_modes}, 通知策略: {self.notify_modes})")
 
         # 首先尝试加载本地历史记录
         self.load_local_history()
@@ -157,7 +159,9 @@ class SiteMonitor(threading.Thread):
 
             elif current_hash != self.last_hash:
                 # 网页哈希变动：发现更新！
-                send_alert(self.site_name)
+
+                # 将网址也传给分发中心，方便企业微信发送 Markdown 超链接
+                send_alert(self.site_name, self.url, self.notify_modes)
                 self.save_html(raw_html)
                 self.last_hash = current_hash
 

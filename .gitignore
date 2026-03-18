@@ -4,4 +4,5 @@ __pycache__/
 venv/
 .idea/
 .DS_Store
-capture/
+captures/
+config_test.py

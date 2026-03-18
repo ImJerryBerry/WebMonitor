@@ -1,19 +1,16 @@
 # config.py
 
+# 在这里配置企业微信机器人的Webhook地址，留空则表示不使用企业微信机器人
+WECHAT_WEBHOOK = ""
+
 # 在这里配置想要监听的网站列表
-# name: 网站名称
-# url: 网站地址
-# interval: 监听间隔时间（单位：秒）。如果不写，系统将默认使用60秒
-# save_mode 说明:
-#   0 : 不保存HTML到本地
-#   1 : 发生更新时保存最新的一次HTML，并自动删除上次记录的旧HTML文件
-#   2 : 发生更新时保存每一次更新的HTML，且保留所有的历史旧HTML文件
 WEBSITES = [
     {
-        "name": "某大学教务处公告",              # 自定义网站名称
-        "url": "https://example.edu.cn/notice", # 目标网页链接
-        "interval": 60,                         # 刷新间隔（秒），默认60秒
-        "save_mode": 1                          # 网页快照保存模式（详见下方说明）
+        "name": "百度",                   # 自定义网站名称
+        "url": "https://www.baidu.com/", # 目标网页链接
+        "interval": 60,                  # 刷新间隔（秒），默认60秒
+        "save_mode": 1,                  # 网页快照保存模式（详见README说明）
+        "notify_modes": [1, 2, 3]        # 通知模式（详见README说明）
     }
 ]
 
